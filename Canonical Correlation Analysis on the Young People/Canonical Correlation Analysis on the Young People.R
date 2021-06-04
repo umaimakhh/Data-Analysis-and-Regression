@@ -1,0 +1,230 @@
+library(foreign)
+library(CCA)
+library(yacca)
+library(MASS)
+library(corrplot) #Plot Correlations
+
+
+#Read in Iris Data
+setwd("E:/DPU/Summer I/Advance Data Analysis/week7/HW3")
+
+responses <- read.csv(file="responses.csv", header=TRUE, sep=",")
+head(responses)
+
+
+#Check Sample Size and Number of Variables
+dim(responses)
+#1,010-Sample Size and 150 variables
+
+#Show for first 6 rows of data
+head(responses)
+
+names(responses)
+
+################################################################################################
+
+#Check for Missing Values (i.e. NAs)
+
+#For All Variables
+sum(is.na(responses))
+#571 total missing values (571 cells with missing data)
+
+
+#Treat Missing Values
+
+#Listwise Deletion
+responses2 <- na.omit(responses)
+
+#Check new data has no missing data
+sum(is.na(responses2))
+
+
+#################################################################################################################
+
+#Show Structure of Dataset
+str(responses2, list.len=ncol(responses2))
+
+#Show column Numbers
+names(responses2)
+
+
+
+#Create new subsets of data (Numeric Variables Only)
+
+responses3 <- responses2[,c(1:73,76,77:107,110:132,134:140,141:144)]
+
+music <- responses2[,1:19]
+hobbies_interests <- responses2[,32:63]
+
+
+
+#Show descriptive statistics
+
+#Normality Rule of Thumb with Skewnewss and Kurtosis (think normal bell curve):
+#Short Way:
+#If skewnewss is close to 0, the distribution is normal.
+#If Kurtosis is -3 or 3, the distribution is normal.
+
+#If skewness is less than -1 or greater than 1, the distribution is highly skewed.
+#If skewness is between -1 and -0.5 or between 0.5 and 1, the distribution is moderately skewed.
+#If skewness is between -0.5 and 0.5, the distribution is approximately symmetric.
+
+
+library(psych)
+describe(music)
+describe(hobbies_interests)
+
+#############################################################################################################
+
+#Exploratory Analysis Graphing
+
+
+#Check for Multicollinearity with Correlations
+
+
+M<-cor(music, method="spearman")
+M
+
+#personality
+corrplot(cor(M,method="spearman"), method = "number", type = "lower")
+
+
+H<-cor(hobbies_interests, method="spearman")
+H
+
+#personality
+corrplot(cor(H,method="spearman"), method = "number", type = "lower")
+
+
+# Run a correlation test to see how correlated the variables are.  Which correlations are significant
+options("scipen"=100, "digits"=5)
+round(cor(hobbies_interests), 2)
+MCorrTest = corr.test(hobbies_interests, adjust="none")
+MCorrTest
+
+H = MCorrTest$p
+H
+
+# Now, for each element, see if it is < .01 (or whatever significance) and set the entry to 
+# true = significant or false
+HTest = ifelse(H < .01, T, F)
+HTest
+
+# Now lets see how many significant correlations there are for each variable.  We can do
+# this by summing the columns of the matrix
+colSums(HTest) - 1  # We have to subtract 1 for the diagonal elements (self-correlation)
+
+
+
+###################################################################
+# Exploring correlations between MUSIC and hobby
+
+
+###################################################################
+# This is a nice function for computing the Wilks lambdas for 
+# CCA data from the CCA library's method
+# It computes the wilkes lambas the degrees of freedom and te 
+# p-values
+###################################################################
+
+ccaWilks = function(set1, set2, cca)
+{
+  ev = ((1 - cca$cor^2))
+  ev
+  
+  n = dim(set1)[1]
+  p = length(set1)
+  q = length(set2)
+  k = min(p, q)
+  m = n - 3/2 - (p + q)/2
+  m
+  
+  w = rev(cumprod(rev(ev)))
+  
+  # initialize
+  d1 = d2 = f = vector("numeric", k)
+  
+  for (i in 1:k) 
+  {
+    s = sqrt((p^2 * q^2 - 4)/(p^2 + q^2 - 5))
+    si = 1/s
+    d1[i] = p * q
+    d2[i] = m * s - p * q/2 + 1
+    r = (1 - w[i]^si)/w[i]^si
+    f[i] = r * d2[i]/d1[i]
+    p = p - 1
+    q = q - 1
+  }
+  
+  pv = pf(f, d1, d2, lower.tail = FALSE)
+  dmat = cbind(WilksL = w, F = f, df1 = d1, df2 = d2, p = pv)
+}
+
+# This gives us the cannonical correlates, but no significance tests
+c = cancor(hobbies_interests, music)
+c
+
+# The CCA library has more extensive functionality
+library(CCA)
+
+#Breakdown of the Correlations
+matcor(hobbies_interests, music)
+
+#Correlations between sepal and sepal (X)
+#Correlations between petal and petal (Y)
+cc_mm = cc(hobbies_interests, music)
+cc_mm$cor
+
+#Funcrions for CCA
+ls(cc_mm)
+
+#XCoef Correlations
+cc_mm$xcoef
+
+#YCoef Correlations
+cc_mm$ycoef
+
+#Calculate Scores
+loadings_mm = comput(hobbies_interests, music, cc_mm)
+ls(loadings_mm)
+
+#Correlation X Scores
+loadings_mm$corr.X.xscores
+
+#Correlation Y Scores
+loadings_mm$corr.Y.yscores
+
+
+#Wilk's Lambda Test
+wilks_mm = ccaWilks(hobbies_interests, music, cc_mm)
+round(wilks_mm, 2)
+
+music <- responses[,1:19]
+hobbies_interests <- responses[,32:63]
+M<-cor(music, method="spearman")
+M
+
+
+corrplot(cor(M,method="spearman"), method = "number", type = "lower")
+
+library(yacca)
+c2 = cca(hobbies_interests,music)
+c2
+
+
+#CV1
+helio.plot(c2, cv=1, x.name="hobbies_interests Values", 
+           y.name="music Values")
+
+
+
+#Function Names
+ls(c2)
+
+# Perform a chisquare test on C2
+c2
+ls(c2)
+c2$chisq
+c2$df
+summary(c2)
+round(pchisq(c2$chisq, c2$df, lower.tail=F), 3)
