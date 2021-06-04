@@ -1,0 +1,365 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="fluid-row">
+
+
+
+<h1 class="title toc-ignore">Problem 5</h1>
+<h4 class="author">Umaima Khurshid Ahmad</h4>
+<h4 class="date">7/26/2020</h4>
+
+</div>
+
+
+<pre class="r"><code>#Set Working Directory
+setwd(&quot;E:/DPU/Summer I/Advance Data Analysis/HW 1&quot;)</code></pre>
+<pre class="r"><code>#Read in Datasets
+
+training_values &lt;- read.csv(file=&quot;insurance_dataset.csv&quot;, header=TRUE, sep=&quot;,&quot;)</code></pre>
+<div class="section level2">
+<h2>#identifying correlation</h2>
+<pre class="r"><code>cor(training_values[c(&quot;age&quot;, &quot;bmi&quot;, &quot;children&quot;, &quot;gender_num&quot;,&quot;smoker_num&quot;,&quot;region_num&quot;)])</code></pre>
+<pre><code>##                     age         bmi   children   gender_num   smoker_num
+## age         1.000000000 0.109341015 0.04246900 -0.020855872 -0.025018752
+## bmi         0.109341015 1.000000000 0.01264471  0.046380206  0.003968054
+## children    0.042468999 0.012644707 1.00000000  0.017162978  0.007673120
+## gender_num -0.020855872 0.046380206 0.01716298  1.000000000  0.076184817
+## smoker_num -0.025018752 0.003968054 0.00767312  0.076184817  1.000000000
+## region_num  0.002127313 0.157439137 0.01656945  0.004588385 -0.002180682
+##              region_num
+## age         0.002127313
+## bmi         0.157439137
+## children    0.016569446
+## gender_num  0.004588385
+## smoker_num -0.002180682
+## region_num  1.000000000</code></pre>
+<pre class="r"><code>correlationData &lt;- training_values[,c(1,3,4,5,7,9,10)] #extracting nomial features
+M&lt;-cor(correlationData, method=&quot;spearman&quot;)
+M</code></pre>
+<pre><code>##                     age   gender_num         bmi   children   smoker_num
+## age         1.000000000 -0.020808830 0.107691641 0.05699222 -0.025210462
+## gender_num -0.020808830  1.000000000 0.044778943 0.01558858  0.076184817
+## bmi         0.107691641  0.044778943 1.000000000 0.01558886  0.002361582
+## children    0.056992224  0.015588577 0.015588856 1.00000000  0.016583386
+## smoker_num -0.025210462  0.076184817 0.002361582 0.01658339  1.000000000
+## region_num  0.004315282  0.004613890 0.153158467 0.01060442 -0.002154800
+## expenses    0.534392134  0.009489706 0.119418854 0.13333894  0.663460060
+##              region_num     expenses
+## age         0.004315282  0.534392134
+## gender_num  0.004613890  0.009489706
+## bmi         0.153158467  0.119418854
+## children    0.010604420  0.133338943
+## smoker_num -0.002154800  0.663460060
+## region_num  1.000000000 -0.043530622
+## expenses   -0.043530622  1.000000000</code></pre>
+<pre class="r"><code>corrplot::corrplot(M, method = &quot;square&quot;)</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+<div class="section level2">
+<h2>model summary and automatic feature selection</h2>
+<p>You can also embed plots, for example:</p>
+<pre class="r"><code>library(MASS)
+model &lt;- lm(expenses ~ age+bmi+children+gender_num+smoker_num+region_num , data=training_values)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = expenses ~ age + bmi + children + gender_num + smoker_num + 
+##     region_num, data = training_values)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -11340  -2811  -1021   1407  29740 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -11464.54     983.00 -11.663  &lt; 2e-16 ***
+## age            257.27      11.89  21.646  &lt; 2e-16 ***
+## bmi            332.64      27.72  12.000  &lt; 2e-16 ***
+## children       479.56     137.64   3.484  0.00051 ***
+## gender_num    -131.15     332.80  -0.394  0.69359    
+## smoker_num   23819.32     411.83  57.838  &lt; 2e-16 ***
+## region_num    -353.49     151.92  -2.327  0.02013 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 6060 on 1331 degrees of freedom
+## Multiple R-squared:  0.7508, Adjusted R-squared:  0.7496 
+## F-statistic: 668.2 on 6 and 1331 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>step &lt;- MASS::stepAIC(model, direction = &quot;backward&quot;)</code></pre>
+<pre><code>## Start:  AIC=23313.29
+## expenses ~ age + bmi + children + gender_num + smoker_num + region_num
+## 
+##              Df  Sum of Sq        RSS   AIC
+## - gender_num  1 5.7018e+06 4.8877e+10 23311
+## &lt;none&gt;                     4.8871e+10 23313
+## - region_num  1 1.9879e+08 4.9070e+10 23317
+## - children    1 4.4574e+08 4.9317e+10 23323
+## - bmi         1 5.2874e+09 5.4159e+10 23449
+## - age         1 1.7204e+10 6.6075e+10 23715
+## - smoker_num  1 1.2283e+11 1.7170e+11 24993
+## 
+## Step:  AIC=23311.45
+## expenses ~ age + bmi + children + smoker_num + region_num
+## 
+##              Df  Sum of Sq        RSS   AIC
+## &lt;none&gt;                     4.8877e+10 23311
+## - region_num  1 1.9858e+08 4.9075e+10 23315
+## - children    1 4.4414e+08 4.9321e+10 23322
+## - bmi         1 5.2830e+09 5.4160e+10 23447
+## - age         1 1.7230e+10 6.6107e+10 23714
+## - smoker_num  1 1.2340e+11 1.7228e+11 24995</code></pre>
+<pre class="r"><code>m6 &lt;- lm(expenses ~ 1, data=training_values)
+summary(m6)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = expenses ~ 1, data = training_values)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -12149  -8530  -3888   3369  50500 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  13270.4      331.1   40.08   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 12110 on 1337 degrees of freedom</code></pre>
+<pre class="r"><code>step &lt;- MASS::stepAIC(m6,direction=&quot;forward&quot;, scope=list(upper=model,lower=m6)) # just for testing</code></pre>
+<pre><code>## Start:  AIC=25160.18
+## expenses ~ 1
+## 
+##              Df  Sum of Sq        RSS   AIC
+## + smoker_num  1 1.2152e+11 7.4554e+10 23868
+## + age         1 1.7530e+10 1.7854e+11 25037
+## + bmi         1 7.7317e+09 1.8834e+11 25108
+## + children    1 9.0660e+08 1.9517e+11 25156
+## + gender_num  1 6.4359e+08 1.9543e+11 25158
+## &lt;none&gt;                     1.9607e+11 25160
+## + region_num  1 7.5571e+06 1.9607e+11 25162
+## 
+## Step:  AIC=23868.38
+## expenses ~ smoker_num
+## 
+##              Df  Sum of Sq        RSS   AIC
+## + age         1 1.9928e+10 5.4626e+10 23454
+## + bmi         1 7.4905e+09 6.7064e+10 23729
+## + children    1 7.5272e+08 7.3802e+10 23857
+## &lt;none&gt;                     7.4554e+10 23868
+## + region_num  1 3.9555e+06 7.4550e+10 23870
+## + gender_num  1 1.4213e+06 7.4553e+10 23870
+## 
+## Step:  AIC=23454.24
+## expenses ~ smoker_num + age
+## 
+##              Df  Sum of Sq        RSS   AIC
+## + bmi         1 5115549656 4.9511e+10 23325
+## + children    1  459283788 5.4167e+10 23445
+## &lt;none&gt;                     5.4626e+10 23454
+## + region_num  1    5205450 5.4621e+10 23456
+## + gender_num  1    2225519 5.4624e+10 23456
+## 
+## Step:  AIC=23324.68
+## expenses ~ smoker_num + age + bmi
+## 
+##              Df Sum of Sq        RSS   AIC
+## + children    1 435119764 4.9075e+10 23315
+## + region_num  1 189555520 4.9321e+10 23322
+## &lt;none&gt;                    4.9511e+10 23325
+## + gender_num  1   3944852 4.9507e+10 23327
+## 
+## Step:  AIC=23314.87
+## expenses ~ smoker_num + age + bmi + children
+## 
+##              Df Sum of Sq        RSS   AIC
+## + region_num  1 198576930 4.8877e+10 23311
+## &lt;none&gt;                    4.9075e+10 23315
+## + gender_num  1   5489599 4.9070e+10 23317
+## 
+## Step:  AIC=23311.45
+## expenses ~ smoker_num + age + bmi + children + region_num
+## 
+##              Df Sum of Sq        RSS   AIC
+## &lt;none&gt;                    4.8877e+10 23311
+## + gender_num  1   5701826 4.8871e+10 23313</code></pre>
+<pre class="r"><code>step.model &lt;- stepAIC(model, direction = &quot;both&quot;, 
+                      trace = FALSE)
+summary(step.model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = expenses ~ age + bmi + children + smoker_num + region_num, 
+##     data = training_values)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -11402  -2808   -989   1392  29683 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -11516.14     973.93 -11.824  &lt; 2e-16 ***
+## age            257.39      11.88  21.669  &lt; 2e-16 ***
+## bmi            332.12      27.68  11.999  &lt; 2e-16 ***
+## children       478.64     137.58   3.479 0.000519 ***
+## smoker_num   23807.10     410.53  57.991  &lt; 2e-16 ***
+## region_num    -353.29     151.87  -2.326 0.020152 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 6058 on 1332 degrees of freedom
+## Multiple R-squared:  0.7507, Adjusted R-squared:  0.7498 
+## F-statistic: 802.3 on 5 and 1332 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>model &lt;- lm(expenses ~ age+bmi+children+smoker_num , data=training_values)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = expenses ~ age + bmi + children + smoker_num, data = training_values)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -11895  -2921   -985   1382  29499 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) -12105.48     941.95 -12.851  &lt; 2e-16 ***
+## age            257.83      11.90  21.674  &lt; 2e-16 ***
+## bmi            321.94      27.38  11.760  &lt; 2e-16 ***
+## children       473.69     137.79   3.438 0.000604 ***
+## smoker_num   23810.32     411.21  57.903  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 6068 on 1333 degrees of freedom
+## Multiple R-squared:  0.7497, Adjusted R-squared:  0.749 
+## F-statistic: 998.2 on 4 and 1333 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+<div class="section level2">
+<h2>data visualization</h2>
+<pre class="r"><code>hist(training_values$expenses, col=&quot;yellow&quot;) 
+
+library(GGally)</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;GGally&#39;:
+##   method from   
+##   +.gg   ggplot2</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>continousVariables &lt;- training_values[,c(1,4,10)] #extracting scatterplots only for age,bmi,expense
+ggpairs(continousVariables)</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>#Bar Plot
+counts &lt;- table(training_values$children)
+barplot(counts, main=&quot;Number of observations&quot;,ylab=&quot;Number of observations&quot;, xlab=&quot;Children&quot;, col=c(&quot;blue&quot;,&quot;green&quot;))</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>#interaction plot - smokers
+library(plotly)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;plotly&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     last_plot</code></pre>
+<pre><code>## The following object is masked from &#39;package:MASS&#39;:
+## 
+##     select</code></pre>
+<pre><code>## The following object is masked from &#39;package:stats&#39;:
+## 
+##     filter</code></pre>
+<pre><code>## The following object is masked from &#39;package:graphics&#39;:
+## 
+##     layout</code></pre>
+<pre class="r"><code>demog_plot &lt;- ggplot(training_values, aes(smoker, expenses, fill=smoker)) +
+  geom_point(position = position_jitter(width= 0.2, height = 0), size = 2)
+ggplotly(demog_plot)</code></pre>
+<div style="width:672px;height:480px;" class="plotly html-widget"></div>
+
+<pre class="r"><code>#interaction plot - sex
+demog_plotgender &lt;- ggplot(training_values, aes(sex, expenses, fill=sex)) +
+  geom_point(position = position_jitter(width= 0.2, height = 0), size = 2)
+ggplotly(demog_plotgender)</code></pre>
+<div style="width:672px;height:480px;" class="plotly html-widget"></div>
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" src="/d2l/common/math/MathML.js?v=20.21.5.29739 "></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() { D2LMathML.DesktopInit('https://s.brightspace.com/lib/mathjax/2.7.4/MathJax.js?config=MML_HTMLorMML','https://s.brightspace.com/lib/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML','130',false); });</script></body></html>
